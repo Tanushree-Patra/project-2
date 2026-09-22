@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Copilot - Your Campus. One Copilot.</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        },
+                        brand: {
+                            blue: '#2563eb',
+                            indigo: '#6366f1',
+                            purple: '#8b5cf6',
+                            lightBg: '#f8fafc'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Custom scrollbar for chat and clean UI */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .active-tab {
+            background-color: #eff6ff;
+            color: #2563eb;
+            font-weight: 600;
+            border-right: 3px solid #2563eb;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- TOP BAR NAV -->
+    <header class="bg-slate-900 text-white sticky top-0 z-30 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Left Logo & Toggle -->
+            <div class="flex items-center space-x-3">
+                <button id="mobileMenuBtn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-lg shadow-lg">
+                        <i class="fa-solid fa-compass"></i>
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-lg tracking-tight text-white">Campus<span class="text-blue-400">Copilot</span></span>
+                        <span class="hidden sm:inline-block text-[10px] text-slate-400 block -mt-1 font-medium">Your Campus. One Copilot.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Search Bar -->
+            <div class="hidden md:flex flex-1 max-w-md mx-6">
+                <div class="relative w-full text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-sm"></i>
+                    <input type="text" placeholder="Search notices, labs, timetable, books..." 
+                        class="w-full bg-slate-800 text-white placeholder-slate-400 text-sm rounded-lg pl-9 pr-4 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-slate-700">
+                </div>
+            </div>
+
+            <!-- Right Controls: Role Switcher, Notifications, Profile -->
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                <!-- Role Switcher -->
+                <div class="bg-slate-800 p-1 rounded-lg border border-slate-700 flex text-xs">
+                    <button onclick="switchRole('Student')" id="roleStudentBtn" class="px-2.5 py-1 rounded-md font-medium text-white bg-blue-600 transition">Student</button>
+                    <button onclick="switchRole('Faculty')" id="roleFacultyBtn" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition">Faculty</button>
+                    <button onclick="switchRole('Admin')" id="roleAdminBtn" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition">Admin</button>
+                </div>
+
+                <!-- Notifications Dropdown Trigger -->
+                <div class="relative">
+                    <button id="notifBtn" onclick="toggleNotifications()" class="relative p-2 text-slate-300 hover:text-white transition rounded-full hover:bg-slate-800">
+                        <i class="fa-regular fa-bell text-lg"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-slate-900"></span>
+                    </button>
+                    <!-- Notifications Box -->
+                    <div id="notifBox" class="hidden absolute right-0 mt-2 w-80 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 z-50 p-4">
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-100 mb-2">
+                            <span class="font-bold text-sm">Notifications</span>
+                            <span class="text-xs text-blue-600 font-medium cursor-pointer" onclick="clearNotifs()">Mark all read</span>
+                        </div>
+                        <div class="space-y-3 text-xs max-h-64 overflow-y-auto" id="notifList">
+                            <div class="p-2 bg-blue-50 rounded-lg flex items-start space-x-2">
+                                <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
+                                <div>
+                                    <p class="font-semibold text-slate-800">Mid-Term Exam Schedule Released</p>
+                                    <p class="text-slate-500 text-[11px]">10 minutes ago</p>
+                                </div>
+                            </div>
+                            <div class="p-2 bg-emerald-50 rounded-lg flex items-start space-x-2">
+                                <i class="fa-solid fa-circle-check text-emerald-500 mt-0.5"></i>
+                                <div>
+                                    <p class="font-semibold text-slate-800">Wi-Fi Complaint #REQ-1042 Resolved</p>
+                                    <p class="text-slate-500 text-[11px]">1 hour ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Badge -->
+                <div class="flex items-center space-x-2 border-l border-slate-800 pl-3">
+                    <img id="userAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="User" class="w-8 h-8 rounded-full border border-slate-600 object-cover">
+                    <div class="hidden lg:block text-left">
+                        <p id="userName" class="text-xs font-semibold text-white leading-tight">Alex Morgan</p>
+                        <p id="userSub" class="text-[10px] text-slate-400">CS Dept • Sem 6</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div id="backendStatus" class="fixed bottom-4 right-4 z-40 text-[11px] font-semibold px-3 py-2 rounded-full bg-slate-900 text-white shadow-lg opacity-90">
+        Backend: connecting...
+    </div>
+
+    <!-- MAIN WRAPPER WITH SIDEBAR & CONTENT -->
+    <div class="flex-1 max-w-7xl w-full mx-auto flex overflow-hidden">
+
+        <!-- SIDEBAR NAVIGATION -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 flex-shrink-0 md:block hidden flex flex-col justify-between py-4 text-slate-600 z-20">
+            <div class="space-y-1 px-3">
+                <div class="px-3 pb-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Main Menu</div>
+                
+                <a href="#" onclick="showSection('dashboard')" id="nav-dashboard" class="sidebar-item active-tab flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50">
+                    <i class="fa-solid fa-chart-pie w-5 text-center text-blue-600"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="#" onclick="showSection('assistant')" id="nav-assistant" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50 text-indigo-600 font-semibold">
+                    <i class="fa-solid fa-robot w-5 text-center text-indigo-600"></i>
+                    <span>AI Campus Assistant</span>
+                    <span class="ml-auto bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded font-bold">AI</span>
+                </a>
+
+                <a href="#" onclick="showSection('timetable')" id="nav-timetable" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50">
+                    <i class="fa-solid fa-calendar-days w-5 text-center text-slate-500"></i>
+                    <span>Timetable</span>
+                </a>
+
+                <a href="#" onclick="showSection('attendance')" id="nav-attendance" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50">
+                    <i class="fa-solid fa-user-check w-5 text-center text-slate-500"></i>
+                    <span>Attendance</span>
+                </a>
+
+                <a href="#" onclick="showSection('labs')" id="nav-labs" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50">
+                    <i class="fa-solid fa-laptop-code w-5 text-center text-slate-500"></i>
+                    <span>Labs & Facilities</span>
+                </a>
+
+                <a href="#" onclick="showSection('library')" id="nav-library" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50">
+                    <i class="fa-solid fa-book w-5 text-center text-slate-500"></i>
+                    <span>Library</span>
+                </a>
+
+                <a href="#" onclick="showSection('requests')" id="nav-requests" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50">
+                    <i class="fa-solid fa-clipboard-question w-5 text-center text-slate-500"></i>
+                    <span>Complaints & Requests</span>
+                </a>
+
+                <a href="#" onclick="showSection('events')" id="nav-events" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50">
+                    <i class="fa-solid fa-calendar-star w-5 text-center text-slate-500"></i>
+                    <span>Campus Events</span>
+                </a>
+
+                <a href="#" onclick="showSection('notices')" id="nav-notices" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50">
+                    <i class="fa-solid fa-bullhorn w-5 text-center text-slate-500"></i>
+                    <span>Notices</span>
+                </a>
+
+                <a href="#" onclick="showSection('transport')" id="nav-transport" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50">
+                    <i class="fa-solid fa-bus w-5 text-center text-slate-500"></i>
+                    <span>Transport</span>
+                </a>
+
+                <a href="#" onclick="showSection('canteen')" id="nav-canteen" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-50">
+                    <i class="fa-solid fa-utensils w-5 text-center text-slate-500"></i>
+                    <span>Canteen</span>
+                </a>
+
+                <div class="pt-3 border-t border-slate-100 my-2"></div>
+
+                <a href="#" onclick="showSection('emergency')" id="nav-emergency" class="sidebar-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 transition">
+                    <i class="fa-solid fa-triangle-exclamation w-5 text-center"></i>
+                    <span>Emergency Help</span>
+                </a>
+            </div>
+
+            <!-- Footer Badge -->
+            <div class="px-4 pt-4 border-t border-slate-100">
+                <div class="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 text-xs">
+                    <p class="font-bold text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-blue-600"></i> Safe Campus System</p>
+                    <p class="text-slate-500 text-[11px] mt-1">24/7 Security & Support online.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN PAGE DISPLAY CONTAINER -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50">
+
+            <!-- 1. DASHBOARD VIEW -->
+            <section id="sec-dashboard" class="space-y-6">
+                <!-- Welcome Banner -->
+                <div class="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+                    <div class="relative z-10 max-w-2xl">
+                        <span class="px-2.5 py-1 rounded-full bg-blue-500/30 text-blue-200 border border-blue-400/30 text-xs font-semibold uppercase tracking-wider">Fall Semester 2026</span>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold mt-2 tracking-tight">Welcome back, <span id="dashWelcomeName">Alex</span>! 👋</h1>
+                        <p class="text-slate-300 text-sm mt-1">You have 3 classes today and 1 active request under review. Need campus info? Launch the Copilot AI anytime.</p>
+                        
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <button onclick="showSection('assistant')" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl text-xs sm:text-sm flex items-center space-x-2 shadow-lg transition">
+                                <i class="fa-solid fa-robot"></i>
+                                <span>Ask Campus Copilot</span>
+                            </button>
+                            <button onclick="openModal('quickReqModal')" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium rounded-xl text-xs sm:text-sm flex items-center space-x-2 transition">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>Raise New Issue</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Grid Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <!-- Stat Card 1: Attendance -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Overall Attendance</p>
+                            <h3 class="text-2xl font-extrabold text-slate-800 mt-1">87.5%</h3>
+                            <p class="text-xs text-emerald-600 font-medium mt-1"><i class="fa-solid fa-arrow-up"></i> Above safe threshold (75%)</p>
+                        </div>
+                        <div class="relative w-14 h-14 flex items-center justify-center">
+                            <svg class="w-14 h-14 transform -rotate-90">
+                                <circle cx="28" cy="28" r="22" stroke="#e2e8f0" stroke-width="5" fill="transparent"/>
+                                <circle cx="28" cy="28" r="22" stroke="#2563eb" stroke-width="5" fill="transparent" stroke-dasharray="138" stroke-dashoffset="17"/>
+                            </svg>
+                            <i class="fa-solid fa-user-check absolute text-blue-600 text-sm"></i>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 2: Pending Requests -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Requests</p>
+                            <h3 class="text-2xl font-extrabold text-slate-800 mt-1" id="dashReqCount">2</h3>
+                            <p class="text-xs text-amber-600 font-medium mt-1"><i class="fa-solid fa-clock"></i> 1 In Progress, 1 Submitted</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 3: Upcoming Event -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Next Campus Event</p>
+                            <h3 class="text-base font-bold text-slate-800 mt-1 truncate max-w-[150px]">HackCampus '26</h3>
+                            <p class="text-xs text-indigo-600 font-medium mt-1"><i class="fa-solid fa-calendar"></i> This Friday, 10 AM</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 4: Library Books -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Borrowed Books</p>
+                            <h3 class="text-2xl font-extrabold text-slate-800 mt-1">2</h3>
+                            <p class="text-xs text-red-500 font-medium mt-1"><i class="fa-solid fa-triangle-exclamation"></i> 1 Due in 2 days</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-book-bookmark"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Middle Section: Timetable & Notices Split -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Today's Timetable Preview (2 cols) -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                            <div>
+                                <h2 class="font-bold text-slate-800 text-lg">Today's Schedule</h2>
+                                <p class="text-xs text-slate-400">Tuesday, Sep 22 • 3 Lectures Scheduled</p>
+                            </div>
+                            <button onclick="showSection('timetable')" class="text-xs text-blue-600 hover:text-blue-700 font-semibold">View Full Week &rarr;</button>
+                        </div>
+
+                        <div class="space-y-3 mt-4">
+                            <div class="p-3.5 rounded-xl border border-slate-100 bg-blue-50/50 flex items-center justify-between border-l-4 border-l-blue-600">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xs font-bold text-slate-500 bg-white px-2 py-1 rounded shadow-xs">09:00 - 10:30 AM</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">Artificial Intelligence & Neural Nets</h4>
+                                        <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot text-slate-400"></i> Lab 304 • Prof. Alan Turing</p>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full font-medium">Ongoing</span>
+                            </div>
+
+                            <div class="p-3.5 rounded-xl border border-slate-100 bg-white flex items-center justify-between hover:bg-slate-50 transition">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">11:00 - 12:30 PM</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">Database Management Systems</h4>
+                                        <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot text-slate-400"></i> Room 201 • Dr. Sarah Jenkins</p>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-full font-medium">Next</span>
+                            </div>
+
+                            <div class="p-3.5 rounded-xl border border-slate-100 bg-white flex items-center justify-between hover:bg-slate-50 transition">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">02:00 - 03:30 PM</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">Software Engineering Practices</h4>
+                                        <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot text-slate-400"></i> Hall B • Prof. Robert Martin</p>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-full font-medium">Scheduled</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Important Campus Notices Sidebar Widget -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                            <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-bullhorn text-indigo-600"></i> Important Notices
+                            </h2>
+                            <button onclick="showSection('notices')" class="text-xs text-blue-600 hover:text-blue-700 font-semibold">All Notices</button>
+                        </div>
+                        <div class="space-y-3 mt-3">
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <span class="text-[10px] bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded">URGENT</span>
+                                <h4 class="text-xs font-bold text-slate-800 mt-1">Mid-Term Examination Schedule</h4>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Exams start from Oct 5th. Detailed timetable attached.</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <span class="text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded">CIRCULAR</span>
+                                <h4 class="text-xs font-bold text-slate-800 mt-1">Library Extension Hours for Exams</h4>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Library will remain open until 11:00 PM on weekdays.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Services Hub -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h2 class="font-bold text-slate-800 text-base mb-4">Quick Campus Services</h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                        <button onclick="showSection('labs')" class="p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-md transition text-center group bg-slate-50/50">
+                            <div class="w-10 h-10 mx-auto rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg group-hover:scale-110 transition">
+                                <i class="fa-solid fa-laptop-code"></i>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-700 mt-2 block">Book a Lab</span>
+                        </button>
+
+                        <button onclick="showSection('requests')" class="p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-md transition text-center group bg-slate-50/50">
+                            <div class="w-10 h-10 mx-auto rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg group-hover:scale-110 transition">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-700 mt-2 block">Raise Issue</span>
+                        </button>
+
+                        <button onclick="showSection('library')" class="p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-md transition text-center group bg-slate-50/50">
+                            <div class="w-10 h-10 mx-auto rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg group-hover:scale-110 transition">
+                                <i class="fa-solid fa-book"></i>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-700 mt-2 block">Check Library</span>
+                        </button>
+
+                        <button onclick="showSection('timetable')" class="p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-md transition text-center group bg-slate-50/50">
+                            <div class="w-10 h-10 mx-auto rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg group-hover:scale-110 transition">
+                                <i class="fa-solid fa-calendar-days"></i>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-700 mt-2 block">Timetable</span>
+                        </button>
+
+                        <button onclick="showSection('events')" class="p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-md transition text-center group bg-slate-50/50">
+                            <div class="w-10 h-10 mx-auto rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg group-hover:scale-110 transition">
+                                <i class="fa-solid fa-award"></i>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-700 mt-2 block">Events</span>
+                        </button>
+
+                        <button onclick="showSection('emergency')" class="p-4 rounded-xl border border-slate-200 hover:border-red-500 hover:shadow-md transition text-center group bg-red-50/50">
+                            <div class="w-10 h-10 mx-auto rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-lg group-hover:scale-110 transition">
+                                <i class="fa-solid fa-phone-flip"></i>
+                            </div>
+                            <span class="text-xs font-bold text-red-700 mt-2 block">Helpline</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FACULTY DASHBOARD -->
+            <section id="sec-faculty-dashboard" class="hidden space-y-6">
+                <div class="bg-gradient-to-r from-emerald-900 via-teal-800 to-cyan-800 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+                    <div class="relative z-10">
+                        <span class="px-2.5 py-1 rounded-full bg-emerald-400/20 text-emerald-100 border border-emerald-300/30 text-xs font-semibold uppercase tracking-wider">Faculty Portal</span>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold mt-2">Good morning, Dr. Sarah! 👋</h1>
+                        <p class="text-emerald-100 text-sm mt-1">Manage your classes, student attendance, requests, and academic activities from one place.</p>
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <button onclick="showSection('timetable')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl text-xs sm:text-sm"><i class="fa-solid fa-calendar-check mr-1"></i> View My Classes</button>
+                            <button onclick="showSection('requests')" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium rounded-xl text-xs sm:text-sm"><i class="fa-solid fa-list-check mr-1"></i> Review Requests</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Classes</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800 mt-1">3</h3>
+                        <p class="text-xs text-emerald-600 font-medium mt-1"><i class="fa-solid fa-clock"></i> Next at 11:00 AM</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Attendance Pending</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800 mt-1">42</h3>
+                        <p class="text-xs text-amber-600 font-medium mt-1"><i class="fa-solid fa-user-check"></i> Students to mark</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Requests to Review</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800 mt-1">6</h3>
+                        <p class="text-xs text-blue-600 font-medium mt-1"><i class="fa-solid fa-clipboard-list"></i> 2 urgent</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">My Advisees</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800 mt-1">28</h3>
+                        <p class="text-xs text-indigo-600 font-medium mt-1"><i class="fa-solid fa-users"></i> 4 need attention</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                            <div><h2 class="font-bold text-slate-800 text-lg">Today's Teaching Schedule</h2><p class="text-xs text-slate-400">Tuesday, Sep 22 • Faculty view</p></div>
+                            <button onclick="showSection('timetable')" class="text-xs text-emerald-600 font-semibold">Full Timetable →</button>
+                        </div>
+                        <div class="space-y-3 mt-4">
+                            <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100 border-l-4 border-l-emerald-600">
+                                <div class="flex justify-between"><span class="text-xs font-bold text-slate-500">09:00 - 10:30 AM</span><span class="text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold">COMPLETED</span></div>
+                                <h4 class="font-bold text-slate-800 text-sm mt-1">Database Systems Lab</h4><p class="text-xs text-slate-500">Lab 101 • 32 students</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-white border border-slate-100">
+                                <div class="flex justify-between"><span class="text-xs font-bold text-slate-500">11:00 - 12:30 PM</span><span class="text-[10px] px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-bold">UPCOMING</span></div>
+                                <h4 class="font-bold text-slate-800 text-sm mt-1">Database Management Systems</h4><p class="text-xs text-slate-500">Room 201 • 58 students</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-white border border-slate-100">
+                                <div class="flex justify-between"><span class="text-xs font-bold text-slate-500">02:00 - 03:30 PM</span><span class="text-[10px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 font-bold">SCHEDULED</span></div>
+                                <h4 class="font-bold text-slate-800 text-sm mt-1">Faculty Development / Office Hours</h4><p class="text-xs text-slate-500">Faculty Block • 02:00 PM</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100"><h2 class="font-bold text-slate-800 text-lg">Faculty Action Center</h2><span class="text-[10px] px-2 py-1 rounded-full bg-amber-100 text-amber-700 font-bold">6 ACTIONS</span></div>
+                        <div class="space-y-3 mt-4">
+                            <button onclick="showSection('attendance')" class="w-full p-3 rounded-xl border border-slate-100 hover:border-emerald-300 hover:bg-emerald-50 text-left flex items-center justify-between"><span><b class="text-sm text-slate-800">Mark student attendance</b><br><span class="text-xs text-slate-500">42 students pending for today's class</span></span><i class="fa-solid fa-chevron-right text-slate-400"></i></button>
+                            <button onclick="showSection('requests')" class="w-full p-3 rounded-xl border border-slate-100 hover:border-blue-300 hover:bg-blue-50 text-left flex items-center justify-between"><span><b class="text-sm text-slate-800">Review service requests</b><br><span class="text-xs text-slate-500">6 requests assigned to faculty</span></span><i class="fa-solid fa-chevron-right text-slate-400"></i></button>
+                            <button onclick="showSection('events')" class="w-full p-3 rounded-xl border border-slate-100 hover:border-purple-300 hover:bg-purple-50 text-left flex items-center justify-between"><span><b class="text-sm text-slate-800">Approve campus event</b><br><span class="text-xs text-slate-500">2 event registrations need review</span></span><i class="fa-solid fa-chevron-right text-slate-400"></i></button>
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100"><p class="text-xs font-semibold text-slate-700">Faculty Notice</p><p class="text-xs text-slate-500 mt-1">Internal assessment marks submission closes on Sep 30.</p></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ADMIN DASHBOARD -->
+            <section id="sec-admin-dashboard" class="hidden space-y-6">
+                <div class="bg-gradient-to-r from-slate-950 via-purple-900 to-indigo-900 rounded-2xl p-6 text-white shadow-xl">
+                    <div>
+                        <span class="px-2.5 py-1 rounded-full bg-purple-400/20 text-purple-100 border border-purple-300/30 text-xs font-semibold uppercase tracking-wider">Administration Console</span>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold mt-2">Welcome, Admin Controller 👋</h1>
+                        <p class="text-purple-100 text-sm mt-1">Monitor campus operations, service requests, facilities, notices, and system activity.</p>
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <button onclick="showSection('requests')" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl text-xs sm:text-sm"><i class="fa-solid fa-clipboard-check mr-1"></i> Manage Requests</button>
+                            <button onclick="showSection('notices')" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium rounded-xl text-xs sm:text-sm"><i class="fa-solid fa-bullhorn mr-1"></i> Publish Notice</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Students</p><h3 class="text-2xl font-extrabold text-slate-800 mt-1">1,248</h3><p class="text-xs text-emerald-600 font-medium mt-1"><i class="fa-solid fa-arrow-up"></i> 32 new this semester</p></div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Faculty & Staff</p><h3 class="text-2xl font-extrabold text-slate-800 mt-1">86</h3><p class="text-xs text-blue-600 font-medium mt-1"><i class="fa-solid fa-user-tie"></i> 78 active today</p></div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Open Service Requests</p><h3 class="text-2xl font-extrabold text-slate-800 mt-1">24</h3><p class="text-xs text-amber-600 font-medium mt-1"><i class="fa-solid fa-clock"></i> 7 need escalation</p></div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Campus Facility Usage</p><h3 class="text-2xl font-extrabold text-slate-800 mt-1">72%</h3><p class="text-xs text-indigo-600 font-medium mt-1"><i class="fa-solid fa-building"></i> Within capacity</p></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100"><div><h2 class="font-bold text-slate-800 text-lg">Operations Overview</h2><p class="text-xs text-slate-400">Live administrative snapshot</p></div><span class="text-xs text-emerald-600 font-semibold">System Healthy</span></div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100"><div class="flex justify-between"><span class="text-xs text-slate-500">Requests</span><i class="fa-solid fa-ticket text-amber-500"></i></div><h3 class="text-xl font-bold text-slate-800 mt-1">24 Open</h3><div class="w-full bg-slate-200 h-2 rounded-full mt-2"><div class="bg-amber-500 h-2 rounded-full" style="width: 48%"></div></div><p class="text-[11px] text-slate-500 mt-1">12 in progress • 5 submitted • 7 escalated</p></div>
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100"><div class="flex justify-between"><span class="text-xs text-slate-500">Labs & Facilities</span><i class="fa-solid fa-server text-blue-500"></i></div><h3 class="text-xl font-bold text-slate-800 mt-1">18 / 25 Active</h3><div class="w-full bg-slate-200 h-2 rounded-full mt-2"><div class="bg-blue-500 h-2 rounded-full" style="width: 72%"></div></div><p class="text-[11px] text-slate-500 mt-1">3 maintenance alerts • 4 reserved</p></div>
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100"><div class="flex justify-between"><span class="text-xs text-slate-500">Notices</span><i class="fa-solid fa-bullhorn text-purple-500"></i></div><h3 class="text-xl font-bold text-slate-800 mt-1">8 Published</h3><p class="text-[11px] text-slate-500 mt-1">2 scheduled for release this week</p></div>
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100"><div class="flex justify-between"><span class="text-xs text-slate-500">Events</span><i class="fa-solid fa-calendar-days text-emerald-500"></i></div><h3 class="text-xl font-bold text-slate-800 mt-1">5 Upcoming</h3><p class="text-[11px] text-slate-500 mt-1">2 registrations need approval</p></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <h2 class="font-bold text-slate-800 text-lg pb-3 border-b border-slate-100">Admin Alerts</h2>
+                        <div class="space-y-3 mt-4">
+                            <div class="p-3 rounded-xl bg-red-50 border border-red-100"><p class="text-xs font-bold text-red-700">High Priority</p><p class="text-xs text-slate-600 mt-1">7 service requests have exceeded their response target.</p></div>
+                            <div class="p-3 rounded-xl bg-amber-50 border border-amber-100"><p class="text-xs font-bold text-amber-700">Maintenance</p><p class="text-xs text-slate-600 mt-1">Computer Lab 101 equipment inspection is due.</p></div>
+                            <div class="p-3 rounded-xl bg-blue-50 border border-blue-100"><p class="text-xs font-bold text-blue-700">Upcoming</p><p class="text-xs text-slate-600 mt-1">Mid-Term examination notice is scheduled for publication.</p></div>
+                            <button onclick="showSection('labs')" class="w-full mt-1 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">Open Facility Management</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. AI CAMPUS ASSISTANT SECTION -->
+            <section id="sec-assistant" class="hidden h-[calc(100vh-100px)] flex flex-col">
+                <!-- Header -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center text-xl shadow-md">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-slate-800 text-base">Campus Copilot AI</h2>
+                            <p class="text-xs text-slate-500">Ask me anything about your campus, labs, schedule, or facilities.</p>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online
+                    </span>
+                </div>
+
+                <!-- Chat Area Container -->
+                <div class="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+                    <!-- Messages Box -->
+                    <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-4 text-sm">
+                        <!-- AI Greeting -->
+                        <div class="flex items-start space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs flex-shrink-0 mt-1">
+                                <i class="fa-solid fa-robot"></i>
+                            </div>
+                            <div class="bg-slate-100 text-slate-800 p-3.5 rounded-2xl rounded-tl-none max-w-xl text-xs sm:text-sm">
+                                <p>Hello Alex! 👋 I am your <strong>Campus Copilot AI</strong>. I have real-time access to your class schedule, laboratory status, library catalog, canteen menus, and campus notices.</p>
+                                <p class="mt-2 text-slate-600">How can I assist you today?</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Suggested Prompts / Chips -->
+                    <div class="p-3 bg-slate-50 border-t border-slate-100 flex gap-2 overflow-x-auto text-xs whitespace-nowrap scrollbar-none">
+                        <button onclick="sendPrompt('Where is the AI lab?')" class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-500 rounded-full text-slate-700 hover:text-indigo-600 transition">📍 Where is the AI lab?</button>
+                        <button onclick="sendPrompt('When is my next class?')" class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-500 rounded-full text-slate-700 hover:text-indigo-600 transition">⏰ When is my next class?</button>
+                        <button onclick="sendPrompt('Is the library open today?')" class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-500 rounded-full text-slate-700 hover:text-indigo-600 transition">📚 Is the library open today?</button>
+                        <button onclick="sendPrompt('How can I report a classroom issue?')" class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-500 rounded-full text-slate-700 hover:text-indigo-600 transition">🛠️ How to report an issue?</button>
+                        <button onclick="sendPrompt('What events are happening this week?')" class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-500 rounded-full text-slate-700 hover:text-indigo-600 transition">🎉 Events this week?</button>
+                    </div>
+
+                    <!-- Chat Input Box -->
+                    <div class="p-3 bg-white border-t border-slate-200">
+                        <form id="chatForm" onsubmit="handleChatSubmit(event)" class="flex items-center space-x-2">
+                            <input type="text" id="chatInput" placeholder="Type your query here (e.g. 'Where is the examination notice?')..." 
+                                class="flex-1 bg-slate-50 text-slate-800 text-sm px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="submit" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl text-sm transition flex items-center space-x-1">
+                                <span>Send</span>
+                                <i class="fa-solid fa-paper-plane text-xs"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. TIMETABLE VIEW -->
+            <section id="sec-timetable" class="hidden space-y-5">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-xl">Academic Timetable</h2>
+                        <p class="text-xs text-slate-500">Semester 6 • Computer Science & Engineering</p>
+                    </div>
+                    <!-- Day Switcher Tabs -->
+                    <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold overflow-x-auto">
+                        <button onclick="switchTimetableDay('Mon')" id="ttTabMon" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">Mon</button>
+                        <button onclick="switchTimetableDay('Tue')" id="ttTabTue" class="px-3 py-1.5 rounded-lg bg-white text-blue-600 shadow-xs">Tue (Today)</button>
+                        <button onclick="switchTimetableDay('Wed')" id="ttTabWed" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">Wed</button>
+                        <button onclick="switchTimetableDay('Thu')" id="ttTabThu" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">Thu</button>
+                        <button onclick="switchTimetableDay('Fri')" id="ttTabFri" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">Fri</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                                    <th class="p-4">Time Slot</th>
+                                    <th class="p-4">Subject</th>
+                                    <th class="p-4">Faculty</th>
+                                    <th class="p-4">Room / Venue</th>
+                                    <th class="p-4">Type</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timetableBody" class="divide-y divide-slate-100">
+                                <!-- Dynamic content inserted by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. ATTENDANCE VIEW -->
+            <section id="sec-attendance" class="hidden space-y-6">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-2xl shadow-lg flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div>
+                        <span class="bg-white/20 text-xs px-3 py-1 rounded-full font-medium">Safe Zone Status</span>
+                        <h2 class="text-2xl font-extrabold mt-2">Overall Attendance: 87.5%</h2>
+                        <p class="text-xs text-blue-100 mt-1">Total Attended: 105 / 120 Total Conducted Lectures</p>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-white/10 p-3 rounded-xl border border-white/20 text-xs">
+                        <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+                        <span>Eligible for all End-Term Examinations</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Subject 1 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-slate-800">Artificial Intelligence & NN</h3>
+                                <p class="text-xs text-slate-500">CS-601 • Prof. Alan Turing</p>
+                            </div>
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">90.0%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div class="bg-emerald-500 h-2 rounded-full" style="width: 90%;"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500">
+                            <span>Attended: 27 / 30</span>
+                            <span class="text-emerald-600 font-medium">Safe</span>
+                        </div>
+                    </div>
+
+                    <!-- Subject 2 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-slate-800">Database Management Systems</h3>
+                                <p class="text-xs text-slate-500">CS-602 • Dr. Sarah Jenkins</p>
+                            </div>
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">85.7%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div class="bg-emerald-500 h-2 rounded-full" style="width: 85.7%;"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500">
+                            <span>Attended: 24 / 28</span>
+                            <span class="text-emerald-600 font-medium">Safe</span>
+                        </div>
+                    </div>
+
+                    <!-- Subject 3 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-slate-800">Software Engineering</h3>
+                                <p class="text-xs text-slate-500">CS-603 • Prof. Robert Martin</p>
+                            </div>
+                            <span class="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full">76.0%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div class="bg-amber-500 h-2 rounded-full" style="width: 76%;"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500">
+                            <span>Attended: 19 / 25</span>
+                            <span class="text-amber-600 font-medium">Near Threshold (75%)</span>
+                        </div>
+                    </div>
+
+                    <!-- Subject 4 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-slate-800">Computer Networks</h3>
+                                <p class="text-xs text-slate-500">CS-604 • Prof. Vint Cerf</p>
+                            </div>
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">94.4%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div class="bg-emerald-500 h-2 rounded-full" style="width: 94.4%;"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500">
+                            <span>Attended: 34 / 36</span>
+                            <span class="text-emerald-600 font-medium">Safe</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. LABS & FACILITIES SECTION -->
+            <section id="sec-labs" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-xl">Campus Labs & Facilities</h2>
+                        <p class="text-xs text-slate-500">View real-time lab availability and submit slot booking requests.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="labsGrid">
+                    <!-- Labs are dynamically generated via JavaScript -->
+                </div>
+            </section>
+
+            <!-- 6. LIBRARY SECTION -->
+            <section id="sec-library" class="hidden space-y-6">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-xl">Central Campus Library</h2>
+                        <p class="text-xs text-slate-500">Search over 50,000+ books, journals, and digital research resources.</p>
+                    </div>
+                    <button onclick="openModal('bookRequestModal')" class="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition">
+                        <i class="fa-solid fa-plus mr-1"></i> Request New Book
+                    </button>
+                </div>
+
+                <!-- Library Tabs & Search Bar -->
+                <div class="flex flex-col sm:flex-row justify-between gap-4 items-center">
+                    <div class="relative w-full sm:w-80">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="librarySearch" onkeyup="filterBooks()" placeholder="Search title, author, or ISBN..." class="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- Books Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="booksGrid">
+                    <!-- JS loaded books -->
+                </div>
+            </section>
+
+            <!-- 7. COMPLAINTS & REQUESTS SECTION -->
+            <section id="sec-requests" class="hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-xl">Complaints & Service Requests</h2>
+                        <p class="text-xs text-slate-500">Track hostel, Wi-Fi, classroom, and infrastructure tickets.</p>
+                    </div>
+                    <button onclick="openModal('quickReqModal')" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-xl text-xs hover:bg-blue-700 transition">
+                        <i class="fa-solid fa-plus mr-1"></i> Create New Ticket
+                    </button>
+                </div>
+
+                <!-- Tickets List -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between text-xs">
+                        <span class="font-bold text-slate-700">Recent Service Requests</span>
+                        <div class="flex space-x-2">
+                            <button class="px-2.5 py-1 bg-slate-100 rounded font-medium text-slate-700">All</button>
+                            <button class="px-2.5 py-1 bg-white text-slate-500 hover:text-slate-800">In Progress</button>
+                            <button class="px-2.5 py-1 bg-white text-slate-500 hover:text-slate-800">Resolved</button>
+                        </div>
+                    </div>
+                    <div class="divide-y divide-slate-100" id="requestsList">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. CAMPUS EVENTS SECTION -->
+            <section id="sec-events" class="hidden space-y-6">
+                <div>
+                    <h2 class="font-bold text-slate-800 text-xl">Upcoming Campus Events</h2>
+                    <p class="text-xs text-slate-500">Register for workshops, hackathons, and sports tournaments.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="eventsGrid">
+                    <!-- Event 1 -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="h-36 bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white flex flex-col justify-between">
+                            <span class="px-2.5 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold w-max">HACKATHON</span>
+                            <div>
+                                <h3 class="font-extrabold text-lg">HackCampus 2026</h3>
+                                <p class="text-xs text-blue-100">24-Hour AI Innovation Challenge</p>
+                            </div>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col justify-between space-y-3 text-xs">
+                            <div class="space-y-1 text-slate-600">
+                                <p><i class="fa-solid fa-calendar text-blue-500 w-5"></i> Oct 12, 2026 • 10:00 AM</p>
+                                <p><i class="fa-solid fa-location-dot text-blue-500 w-5"></i> Innovation Center Auditorium</p>
+                                <p><i class="fa-solid fa-user-tie text-blue-500 w-5"></i> Organized by Tech Club</p>
+                            </div>
+                            <button onclick="rsvpEvent(this)" class="w-full py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">Register Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Event 2 -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="h-36 bg-gradient-to-r from-purple-600 to-pink-600 p-4 text-white flex flex-col justify-between">
+                            <span class="px-2.5 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold w-max">CULTURAL</span>
+                            <div>
+                                <h3 class="font-extrabold text-lg">Annual Cultural Fest 'Euphoria'</h3>
+                                <p class="text-xs text-pink-100">Music, Dance & Drama Nights</p>
+                            </div>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col justify-between space-y-3 text-xs">
+                            <div class="space-y-1 text-slate-600">
+                                <p><i class="fa-solid fa-calendar text-purple-500 w-5"></i> Nov 05, 2026 • 05:00 PM</p>
+                                <p><i class="fa-solid fa-location-dot text-purple-500 w-5"></i> Main Campus Amphitheater</p>
+                                <p><i class="fa-solid fa-user-tie text-purple-500 w-5"></i> Cultural Committee</p>
+                            </div>
+                            <button onclick="rsvpEvent(this)" class="w-full py-2 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 transition">Register Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Event 3 -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="h-36 bg-gradient-to-r from-emerald-600 to-teal-600 p-4 text-white flex flex-col justify-between">
+                            <span class="px-2.5 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold w-max">WORKSHOP</span>
+                            <div>
+                                <h3 class="font-extrabold text-lg">Cloud Security & DevOps</h3>
+                                <p class="text-xs text-emerald-100">Hands-on Lab Session</p>
+                            </div>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col justify-between space-y-3 text-xs">
+                            <div class="space-y-1 text-slate-600">
+                                <p><i class="fa-solid fa-calendar text-emerald-500 w-5"></i> Oct 28, 2026 • 02:00 PM</p>
+                                <p><i class="fa-solid fa-location-dot text-emerald-500 w-5"></i> Computer Lab 102</p>
+                                <p><i class="fa-solid fa-user-tie text-emerald-500 w-5"></i> IEEE Student Branch</p>
+                            </div>
+                            <button onclick="rsvpEvent(this)" class="w-full py-2 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition">Register Now</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 9. NOTICES SECTION -->
+            <section id="sec-notices" class="hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-xl">Official Notice Board</h2>
+                        <p class="text-xs text-slate-500">Verified announcements from College Dean and Administration.</p>
+                    </div>
+                    <input type="text" id="noticeSearch" onkeyup="filterNotices()" placeholder="Search circulars..." class="bg-white border border-slate-200 rounded-xl px-4 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="space-y-4" id="noticesContainer">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded">EXAMINATION</span>
+                                <span class="text-xs text-slate-400">Published on Sep 20, 2026</span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-base">Mid-Term Examination Schedule - Fall 2026</h3>
+                            <p class="text-xs text-slate-600">All undergraduate students are required to review the attached PDF timetable. Admit cards can be downloaded from student portal starting Oct 1st.</p>
+                        </div>
+                        <button onclick="alert('Downloading Exam Schedule PDF...')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl flex items-center space-x-1 flex-shrink-0">
+                            <i class="fa-solid fa-download text-slate-500"></i>
+                            <span>Download PDF</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded">FEES</span>
+                                <span class="text-xs text-slate-400">Published on Sep 18, 2026</span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-base">Semester Fee Payment Deadline Extension</h3>
+                            <p class="text-xs text-slate-600">The last date for tuition fee submission without late fine has been extended to Oct 10th, 2026.</p>
+                        </div>
+                        <button onclick="alert('Redirecting to Payment Portal...')" class="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-semibold rounded-xl flex items-center space-x-1 flex-shrink-0">
+                            <i class="fa-solid fa-credit-card"></i>
+                            <span>Pay Online</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 10. TRANSPORT SECTION -->
+            <section id="sec-transport" class="hidden space-y-6">
+                <div>
+                    <h2 class="font-bold text-slate-800 text-xl">Campus Shuttle & Bus Schedule</h2>
+                    <p class="text-xs text-slate-500">Live tracking and timings for official college buses.</p>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                                    <th class="p-4">Bus #</th>
+                                    <th class="p-4">Route Name</th>
+                                    <th class="p-4">Departure Time</th>
+                                    <th class="p-4">Key Stops</th>
+                                    <th class="p-4">Live Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-xs">
+                                <tr>
+                                    <td class="p-4 font-bold text-slate-800">Bus 04</td>
+                                    <td class="p-4 font-medium">North Campus Express</td>
+                                    <td class="p-4">08:15 AM</td>
+                                    <td class="p-4 text-slate-500">Central Station &rarr; City Square &rarr; Main Gate</td>
+                                    <td class="p-4"><span class="px-2 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-full text-[10px]">On Time</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-4 font-bold text-slate-800">Bus 09</td>
+                                    <td class="p-4 font-medium">South Suburb Shuttle</td>
+                                    <td class="p-4">08:30 AM</td>
+                                    <td class="p-4 text-slate-500">Metro Station &rarr; Green Park &rarr; Campus West</td>
+                                    <td class="p-4"><span class="px-2 py-1 bg-amber-100 text-amber-700 font-bold rounded-full text-[10px]">Delayed 10 min</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-4 font-bold text-slate-800">Bus 12</td>
+                                    <td class="p-4 font-medium">Hostel Evening Loop</td>
+                                    <td class="p-4">05:45 PM</td>
+                                    <td class="p-4 text-slate-500">Academic Block &rarr; Tech Park &rarr; Girl's Hostel</td>
+                                    <td class="p-4"><span class="px-2 py-1 bg-blue-100 text-blue-700 font-bold rounded-full text-[10px]">Scheduled</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 11. CANTEEN SECTION -->
+            <section id="sec-canteen" class="hidden space-y-6">
+                <div class="bg-gradient-to-r from-orange-500 to-amber-600 text-white p-6 rounded-2xl shadow-lg flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-extrabold">Campus Food Court & Canteen</h2>
+                        <p class="text-xs text-orange-100 mt-1">Operating Hours: 08:00 AM - 09:00 PM</p>
+                    </div>
+                    <div class="hidden sm:block text-right">
+                        <span class="px-3 py-1 bg-white/20 rounded-full text-xs font-bold">Live Order Queue: Moderate</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <!-- Category 1 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-mug-hot text-amber-600"></i> Breakfast Specials
+                        </h3>
+                        <div class="space-y-3 text-xs">
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <div>
+                                    <p class="font-semibold text-slate-800">Avocado & Egg Sandwich</p>
+                                    <p class="text-[11px] text-slate-400">Prep time: 10 mins</p>
+                                </div>
+                                <span class="font-bold text-blue-600">$4.50</span>
+                            </div>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <div>
+                                    <p class="font-semibold text-slate-800">Fresh Fruit Bowl & Yogurt</p>
+                                    <p class="text-[11px] text-slate-400">Prep time: 5 mins</p>
+                                </div>
+                                <span class="font-bold text-blue-600">$3.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category 2 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-bowl-food text-orange-600"></i> Lunch Menu
+                        </h3>
+                        <div class="space-y-3 text-xs">
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <div>
+                                    <p class="font-semibold text-slate-800">Grilled Chicken Rice Bowl</p>
+                                    <p class="text-[11px] text-slate-400">Prep time: 15 mins</p>
+                                </div>
+                                <span class="font-bold text-blue-600">$6.50</span>
+                            </div>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <div>
+                                    <p class="font-semibold text-slate-800">Paneer Tikka Wrap</p>
+                                    <p class="text-[11px] text-slate-400">Prep time: 12 mins</p>
+                                </div>
+                                <span class="font-bold text-blue-600">$5.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category 3 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-bottle-water text-indigo-600"></i> Beverages & Snacks
+                        </h3>
+                        <div class="space-y-3 text-xs">
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <div>
+                                    <p class="font-semibold text-slate-800">Iced Cold Brew Coffee</p>
+                                    <p class="text-[11px] text-slate-400">Instant</p>
+                                </div>
+                                <span class="font-bold text-blue-600">$2.50</span>
+                            </div>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <div>
+                                    <p class="font-semibold text-slate-800">Energy Smoothie</p>
+                                    <p class="text-[11px] text-slate-400">Prep time: 5 mins</p>
+                                </div>
+                                <span class="font-bold text-blue-600">$3.50</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 12. EMERGENCY HELP SECTION -->
+            <section id="sec-emergency" class="hidden space-y-6">
+                <div class="bg-red-600 text-white p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <span class="bg-white/20 text-xs px-3 py-1 rounded-full font-bold uppercase">24/7 Campus SOS</span>
+                        <h2 class="text-2xl font-extrabold mt-2">Emergency Help & Security Desk</h2>
+                        <p class="text-xs text-red-100 mt-1">In immediate danger or medical need? Trigger instant broadcast below.</p>
+                    </div>
+                    <button onclick="triggerSOS()" class="px-6 py-3 bg-white text-red-600 font-extrabold rounded-xl shadow-lg hover:bg-red-50 text-sm transition animate-bounce">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> SEND SOS ALERT
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-base">Main Campus Security</h3>
+                        <p class="text-xs text-slate-500">Gate 1 Central Security Room</p>
+                        <p class="text-sm font-extrabold text-slate-800 pt-2">+1 (800) 555-0199</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-user-nurse"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-base">Campus Medical Center</h3>
+                        <p class="text-xs text-slate-500">Health Center Block B</p>
+                        <p class="text-sm font-extrabold text-slate-800 pt-2">+1 (800) 555-0188</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-hands-holding-child"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-base">Women Safety Helpline</h3>
+                        <p class="text-xs text-slate-500">24/7 Confidential Assistance</p>
+                        <p class="text-sm font-extrabold text-slate-800 pt-2">+1 (800) 555-0177</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL 1: RAISE ISSUE / COMPLAINT -->
+    <div id="quickReqModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-lg">Create Service Request</h3>
+                <button onclick="closeModal('quickReqModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form onsubmit="submitNewTicket(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="font-semibold text-slate-700 block mb-1">Issue Category</label>
+                    <select id="reqCategory" class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>Classroom issue</option>
+                        <option>Electrical issue</option>
+                        <option>Wi-Fi & Network issue</option>
+                        <option>Hostel issue</option>
+                        <option>Cleaning & Maintenance</option>
+                        <option>Lab equipment issue</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="font-semibold text-slate-700 block mb-1">Location / Room Number</label>
+                    <input type="text" id="reqLocation" placeholder="e.g. Room 304 or Girls Hostel Block A" required class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="font-semibold text-slate-700 block mb-1">Issue Description</label>
+                    <textarea id="reqDesc" rows="3" placeholder="Describe the problem in detail..." required class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('quickReqModal')" class="px-4 py-2 border border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: LAB BOOKING -->
+    <div id="labBookModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-lg" id="labModalTitle">Book Laboratory Slot</h3>
+                <button onclick="closeModal('labBookModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form onsubmit="submitLabBooking(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="font-semibold text-slate-700 block mb-1">Select Date</label>
+                    <input type="date" required class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="font-semibold text-slate-700 block mb-1">Time Slot</label>
+                    <select class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>10:00 AM - 12:00 PM</option>
+                        <option>02:00 PM - 04:00 PM</option>
+                        <option>04:00 PM - 06:00 PM</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="font-semibold text-slate-700 block mb-1">Purpose / Project Title</label>
+                    <input type="text" placeholder="e.g. Final Year AI Model Training" required class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('labBookModal')" class="px-4 py-2 border border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700">Confirm Booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: BOOK REQUEST -->
+    <div id="bookRequestModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-lg">Request New Library Book</h3>
+                <button onclick="closeModal('bookRequestModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form onsubmit="submitBookRequest(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="font-semibold text-slate-700 block mb-1">Book Title</label>
+                    <input type="text" placeholder="e.g. Designing Data-Intensive Applications" required class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="font-semibold text-slate-700 block mb-1">Author Name</label>
+                    <input type="text" placeholder="e.g. Martin Kleppmann" required class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('bookRequestModal')" class="px-4 py-2 border border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+// State Management
+        let currentRole = 'Student';
+        
+        // Demo Data
+        const sampleLabs = [
+            { id: 1, name: 'AI & Machine Learning Research Lab', location: 'Tech Block 3rd Floor', capacity: '40 Seats', status: 'Available', equipment: 'NVIDIA RTX 4090 Workstations, PyTorch Suite' },
+            { id: 2, name: 'Computer Lab 101', location: 'Academic Wing A', capacity: '60 Seats', status: 'In Use (Class)', equipment: 'Intel i7 PCs, Cisco Switches' },
+            { id: 3, name: 'IoT & Embedded Systems Lab', location: 'Innovation Block 2nd Floor', capacity: '30 Seats', status: 'Available', equipment: 'Raspberry Pi 4 Kits, Arduino Mega, Soldering Stations' },
+            { id: 4, name: 'Electronics & VLSI Lab', location: 'ECE Building Hall B', capacity: '35 Seats', status: 'Available', equipment: 'Oscilloscopes, Signal Generators, Multimeters' },
+            { id: 5, name: 'Central Seminar & Tech Hall', location: 'Main Building Ground Floor', capacity: '250 Seats', status: 'Reserved', equipment: '4K Projectors, Surround Audio, Wireless Mics' },
+            { id: 6, name: 'Incubation & Startup Hub', location: 'Innovation Block Top Floor', capacity: '50 Seats', status: 'Available', equipment: 'High-speed Wi-Fi, Conference Pods, Whiteboards' }
+        ];
+
+        const sampleBooks = [
+            { title: 'Artificial Intelligence: A Modern Approach', author: 'Stuart Russell & Peter Norvig', status: 'Available', tag: 'CS-601' },
+            { title: 'Database System Concepts (7th Ed)', author: 'Silberschatz, Korth, Sudarshan', status: 'Borrowed (Due Sep 25)', tag: 'CS-602' },
+            { title: 'Clean Code: Handbook of Agile Craftsmanship', author: 'Robert C. Martin', status: 'Available', tag: 'CS-603' },
+            { title: 'Computer Networking: A Top-Down Approach', author: 'Kurose & Ross', status: 'Borrowed (Due Sep 28)', tag: 'CS-604' },
+            { title: 'Introduction to Algorithms (CLRS)', author: 'Cormen, Leiserson, Rivest', status: 'Available', tag: 'Reference' },
+            { title: 'Operating System Concepts', author: 'Abraham Silberschatz', status: 'Available', tag: 'CS-502' }
+        ];
+
+        let sampleRequests = [
+            { id: 'REQ-1042', category: 'Wi-Fi & Network issue', location: 'Girls Hostel Block A', desc: 'Slow Wi-Fi speed during evening hours.', status: 'Resolved', date: 'Sep 20, 2026' },
+            { id: 'REQ-1045', category: 'Classroom issue', location: 'Room 304', desc: 'HDMI Projector display flickers continuously.', status: 'In Progress', date: 'Sep 21, 2026' },
+            { id: 'REQ-1048', category: 'Electrical issue', location: 'Lab 101', desc: 'AC unit in back row making noise.', status: 'Submitted', date: 'Sep 22, 2026' }
+        ];
+
+        const timetableData = {
+            Mon: [
+                { time: '09:00 - 10:30 AM', subject: 'Computer Networks', faculty: 'Prof. Vint Cerf', room: 'Room 204', type: 'Lecture' },
+                { time: '11:00 - 12:30 PM', subject: 'Database Systems Lab', faculty: 'Dr. Sarah Jenkins', room: 'Lab 101', type: 'Practical' }
+            ],
+            Tue: [
+                { time: '09:00 - 10:30 AM', subject: 'Artificial Intelligence & NN', faculty: 'Prof. Alan Turing', room: 'Lab 304', type: 'Lecture' },
+                { time: '11:00 - 12:30 PM', subject: 'Database Management Systems', faculty: 'Dr. Sarah Jenkins', room: 'Room 201', type: 'Lecture' },
+                { time: '02:00 - 03:30 PM', subject: 'Software Engineering', faculty: 'Prof. Robert Martin', room: 'Hall B', type: 'Lecture' }
+            ],
+            Wed: [
+                { time: '10:00 - 11:30 AM', subject: 'AI & Neural Nets Lab', faculty: 'Prof. Alan Turing', room: 'AI Lab 304', type: 'Practical' },
+                { time: '01:30 - 03:00 PM', subject: 'Computer Networks', faculty: 'Prof. Vint Cerf', room: 'Room 204', type: 'Lecture' }
+            ],
+            Thu: [
+                { time: '09:00 - 10:30 AM', subject: 'Software Engineering', faculty: 'Prof. Robert Martin', room: 'Hall B', type: 'Lecture' },
+                { time: '11:00 - 12:30 PM', subject: 'Elective: Cloud Computing', faculty: 'Dr. Werner Vogels', room: 'Room 302', type: 'Lecture' }
+            ],
+            Fri: [
+                { time: '10:00 - 12:00 PM', subject: 'Open Innovation Workshop', faculty: 'Guest Industry Speaker', room: 'Auditorium', type: 'Seminar' }
+            ]
+        };
+
+
+        const API_BASE_URL = window.location.protocol === 'file:'
+            ? 'http://127.0.0.1:8000'
+            : window.location.origin;
+        let selectedLabId = null;
+
+        async function checkBackendHealth() {
+            const statusEl = document.getElementById('backendStatus');
+            if (!statusEl) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/health`);
+                if (!response.ok) throw new Error('health check failed');
+                statusEl.textContent = 'Backend: connected';
+                statusEl.className = 'fixed bottom-4 right-4 z-40 text-[11px] font-semibold px-3 py-2 rounded-full bg-emerald-600 text-white shadow-lg opacity-90';
+            } catch (_) {
+                statusEl.textContent = 'Backend: offline / demo mode';
+                statusEl.className = 'fixed bottom-4 right-4 z-40 text-[11px] font-semibold px-3 py-2 rounded-full bg-amber-500 text-white shadow-lg opacity-90';
+            }
+        }
+
+        function sanitizeAIHtml(rawHtml) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = String(rawHtml ?? '');
+            const allowedTags = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'UL', 'OL', 'LI', 'CODE']);
+            wrapper.querySelectorAll('*').forEach(node => {
+                if (!allowedTags.has(node.tagName)) {
+                    node.replaceWith(...Array.from(node.childNodes));
+                    return;
+                }
+                Array.from(node.attributes).forEach(attr => node.removeAttribute(attr.name));
+            });
+            return wrapper.innerHTML;
+        }
+
+        async function loadTimetableFromBackend(day) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/timetable/${encodeURIComponent(day)}`);
+                if (!response.ok) throw new Error(`Timetable API returned ${response.status}`);
+                const payload = await response.json();
+                if (Array.isArray(payload)) {
+                    timetableData[day] = payload.map(item => ({
+                        time: item.time || '',
+                        subject: item.subject || '',
+                        faculty: item.faculty || '',
+                        room: item.room || '',
+                        type: item.type || 'Lecture'
+                    }));
+                    renderTimetableRows(day);
+                }
+            } catch (error) {
+                console.warn('Backend timetable unavailable; using demo data.', error);
+            }
+        }
+
+        function renderTimetableRows(day) {
+            const tbody = document.getElementById('timetableBody');
+            if (!tbody) return;
+            const data = timetableData[day] || [];
+            if (!data.length) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No classes scheduled for ${escapeHtml(day)}.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = data.map(item => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-4 font-bold text-slate-700">${escapeHtml(item.time)}</td>
+                    <td class="p-4 font-semibold text-slate-800">${escapeHtml(item.subject)}</td>
+                    <td class="p-4 text-slate-600">${escapeHtml(item.faculty)}</td>
+                    <td class="p-4 text-slate-600"><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${escapeHtml(item.room)}</td>
+                    <td class="p-4"><span class="px-2 py-0.5 rounded text-[11px] font-semibold ${item.type === 'Practical' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">${escapeHtml(item.type)}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        
+        async function loadBooksFromBackend() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/books`);
+                if (!response.ok) throw new Error(`Books API returned ${response.status}`);
+                const payload = await response.json();
+                if (Array.isArray(payload) && payload.length) {
+                    sampleBooks.splice(0, sampleBooks.length, ...payload.map(item => ({
+                        id: item.id,
+                        title: item.title || 'Untitled',
+                        author: item.author || 'Unknown',
+                        status: item.status || 'Available',
+                        tag: item.tag || 'General'
+                    })));
+                    renderBooks();
+                }
+            } catch (error) {
+                console.warn('Backend books unavailable; using demo data.', error);
+            }
+        }
+
+async function loadTicketsFromBackend() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/tickets`);
+                if (!response.ok) throw new Error(`Ticket API returned ${response.status}`);
+                const payload = await response.json();
+                if (Array.isArray(payload)) {
+                    sampleRequests.splice(
+                        0,
+                        sampleRequests.length,
+                        ...payload.map(item => ({
+                            id: item.ticket_id || item.id || '',
+                            category: item.category || 'General',
+                            location: item.location || 'Unknown',
+                            desc: item.description || '',
+                            status: item.status || 'Submitted',
+                            date: item.date || ''
+                        }))
+                    );
+                    renderRequests();
+                }
+            } catch (error) {
+                console.warn('Backend tickets unavailable; using demo data.', error);
+            }
+        }
+
+
+
+        function showToast(message, type = 'info', timeout = 3500) {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'fixed bottom-5 right-5 z-[100] space-y-2';
+                document.body.appendChild(container);
+            }
+            const colorMap = { success: 'bg-emerald-600', error: 'bg-rose-600', info: 'bg-slate-800' };
+            const toast = document.createElement('div');
+            toast.className = `${colorMap[type] || colorMap.info} text-white px-4 py-2.5 rounded-xl shadow-lg text-sm transition-opacity duration-300`;
+            toast.textContent = String(message);
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 350);
+            }, timeout);
+        }
+
+        function normalizeLab(lab, index) {
+            return {
+                id: lab.id ?? lab.lab_id ?? index + 1,
+                name: lab.name ?? lab.lab_name ?? `Campus Lab ${index + 1}`,
+                location: lab.location ?? lab.building ?? 'Campus Facility',
+                capacity: lab.capacity ?? (lab.seats ? `${lab.seats} Seats` : 'Capacity not listed'),
+                status: lab.status ?? (lab.available === false ? 'Unavailable' : 'Available'),
+                equipment: lab.equipment ?? lab.description ?? 'Standard lab equipment'
+            };
+        }
+
+        async function loadLabsFromBackend() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/labs`);
+                if (!response.ok) throw new Error(`Lab API returned ${response.status}`);
+                const payload = await response.json();
+                const rows = Array.isArray(payload) ? payload : (Array.isArray(payload.labs) ? payload.labs : []);
+                if (!rows.length) throw new Error('Lab API returned no lab records');
+                const labs = rows.map(normalizeLab);
+                sampleLabs.splice(0, sampleLabs.length, ...labs);
+                renderLabs(labs);
+                showToast('Live lab data loaded.', 'success', 2500);
+            } catch (error) {
+                console.warn('Backend labs unavailable; using demo data.', error);
+                renderLabs(sampleLabs);
+                showToast('Backend unavailable. Showing demo lab data.', 'info', 3000);
+            }
+        }
+
+        // Navigation tab click listener
+        function showSection(sectionId) {
+            const sections = ['dashboard', 'faculty-dashboard', 'admin-dashboard', 'assistant', 'timetable', 'attendance', 'labs', 'library', 'requests', 'events', 'notices', 'transport', 'canteen', 'emergency'];
+            
+            sections.forEach(id => {
+                const el = document.getElementById(`sec-${id}`);
+                const nav = document.getElementById(`nav-${id}`);
+                if (el) el.classList.add('hidden');
+                if (nav) nav.classList.remove('active-tab');
+            });
+
+            const dashboardId = sectionId === 'dashboard' ? (currentRole === 'Faculty' ? 'faculty-dashboard' : currentRole === 'Admin' ? 'admin-dashboard' : 'dashboard') : sectionId;
+            const targetSec = document.getElementById(`sec-${dashboardId}`);
+            const targetNav = document.getElementById(`nav-${sectionId}`);
+            if (targetSec) targetSec.classList.remove('hidden');
+            if (targetNav) targetNav.classList.add('active-tab');
+
+            // Responsive sidebar auto close on mobile select
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) sidebar.classList.add('hidden');
+            }
+        }
+
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) sidebar.classList.toggle('hidden');
+            });
+        }
+
+        // Role Switcher
+        function switchRole(role) {
+            currentRole = role;
+            document.getElementById('roleStudentBtn').className = role === 'Student' ? 'px-2.5 py-1 rounded-md font-medium text-white bg-blue-600 transition' : 'px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition';
+            document.getElementById('roleFacultyBtn').className = role === 'Faculty' ? 'px-2.5 py-1 rounded-md font-medium text-white bg-emerald-600 transition' : 'px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition';
+            document.getElementById('roleAdminBtn').className = role === 'Admin' ? 'px-2.5 py-1 rounded-md font-medium text-white bg-purple-600 transition' : 'px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition';
+
+            const studentNav = ['attendance', 'library'];
+            const facultyNav = ['attendance', 'timetable', 'labs', 'requests', 'events'];
+            const adminNav = ['labs', 'library', 'requests', 'events', 'notices', 'transport', 'canteen'];
+            const allNav = ['attendance','timetable','labs','library','requests','events','notices','transport','canteen'];
+
+            allNav.forEach(id => {
+                const nav = document.getElementById(`nav-${id}`);
+                if (!nav) return;
+                nav.classList.remove('hidden');
+            });
+
+            if (role === 'Student') {
+                document.getElementById('userName').textContent = 'Alex Morgan';
+                document.getElementById('userSub').textContent = 'CS Dept • Sem 6';
+                document.getElementById('dashWelcomeName').textContent = 'Alex';
+                document.getElementById('userAvatar').src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80';
+            } else if (role === 'Faculty') {
+                document.getElementById('userName').textContent = 'Dr. Sarah Jenkins';
+                document.getElementById('userSub').textContent = 'Associate Professor • CSE';
+                document.getElementById('userAvatar').src = 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=100&q=80';
+            } else {
+                document.getElementById('userName').textContent = 'Admin Controller';
+                document.getElementById('userSub').textContent = 'Dean Office • Administration';
+                document.getElementById('userAvatar').src = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=100&q=80';
+            }
+
+            // Role-specific navigation visibility
+            const roleNavMap = {
+                Student: ['attendance','timetable','labs','library','requests','events','notices','transport','canteen'],
+                Faculty: ['timetable','attendance','labs','requests','events','notices'],
+                Admin: ['labs','library','requests','events','notices','transport','canteen']
+            };
+            allNav.forEach(id => {
+                const nav = document.getElementById(`nav-${id}`);
+                if (nav) nav.classList.toggle('hidden', !roleNavMap[role].includes(id));
+            });
+
+            // Switch the entire dashboard, not just the profile name.
+            showSection('dashboard');
+        }
+
+        // Notifications Toggle
+        function toggleNotifications() {
+            const box = document.getElementById('notifBox');
+            if (box) box.classList.toggle('hidden');
+        }
+
+        function clearNotifs() {
+            const list = document.getElementById('notifList');
+            if (list) list.innerHTML = '<p class="text-slate-400 text-center py-2">No new notifications</p>';
+        }
+
+        // AI Chat Assistant Interaction
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[ch]));
+        }
+
+        function sendPrompt(text) {
+            const input = document.getElementById('chatInput');
+            if (!input) return;
+            input.value = text;
+            handleChatSubmit({ preventDefault() {} });
+        }
+
+        async function handleChatSubmit(e) {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const chatMessages = document.getElementById('chatMessages');
+            if (!input || !chatMessages) return;
+
+            const text = input.value.trim();
+            if (!text) return;
+
+            chatMessages.insertAdjacentHTML('beforeend', `
+                <div class="flex items-start justify-end space-x-3">
+                    <div class="bg-blue-600 text-white p-3 rounded-2xl rounded-tr-none max-w-xl text-xs sm:text-sm">
+                        <p>${escapeHtml(text)}</p>
+                    </div>
+                </div>`);
+
+            input.value = '';
+
+            const indicatorId = `typing-${Date.now()}`;
+            chatMessages.insertAdjacentHTML('beforeend', `
+                <div id="${indicatorId}" class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs flex-shrink-0 mt-1"><i class="fa-solid fa-robot"></i></div>
+                    <div class="bg-slate-100 text-slate-500 p-3 rounded-2xl text-xs italic">Campus Copilot is thinking...</div>
+                </div>`);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            let reply = '';
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                if (!response.ok) throw new Error(`Chat API returned ${response.status}`);
+                const payload = await response.json();
+                reply = sanitizeAIHtml(payload.reply || 'I could not generate a response right now.');
+            } catch (error) {
+                console.warn('Backend chat unavailable; using local fallback.', error);
+                const lower = text.toLowerCase();
+                if (lower.includes('ai lab') || lower.includes('where is')) {
+                    reply = "The <strong>AI & Machine Learning Research Lab</strong> is located on the <strong>3rd Floor of Tech Block</strong>. Check the Labs & Facilities section for live status.";
+                } else if (lower.includes('next class') || lower.includes('schedule')) {
+                    reply = "Your next class today is <strong>Database Management Systems</strong> at <strong>11:00 AM</strong> in <strong>Room 201</strong>.";
+                } else if (lower.includes('library')) {
+                    reply = "The Central Campus Library is available from the Library section of this portal.";
+                } else if (lower.includes('issue') || lower.includes('report')) {
+                    reply = "Use <strong>Complaints & Requests</strong> and click <strong>Create New Ticket</strong> to report a problem.";
+                } else if (lower.includes('event')) {
+                    reply = "Upcoming campus events are listed in the <strong>Campus Events</strong> section.";
+                } else {
+                    reply = "I can help with campus labs, timetable, service requests, library, and events. Start the backend for live AI responses.";
+                }
+            }
+
+            const indicator = document.getElementById(indicatorId);
+            if (indicator) indicator.remove();
+
+            chatMessages.insertAdjacentHTML('beforeend', `
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs flex-shrink-0 mt-1"><i class="fa-solid fa-robot"></i></div>
+                    <div class="bg-slate-100 text-slate-800 p-3.5 rounded-2xl rounded-tl-none max-w-xl text-xs sm:text-sm">${reply}</div>
+                </div>`);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Timetable Day Switcher
+        async function switchTimetableDay(day) {
+            ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].forEach(d => {
+                const tab = document.getElementById(`ttTab${d}`);
+                if (tab) {
+                    tab.className = d === day
+                        ? 'px-3 py-1.5 rounded-lg bg-white text-blue-600 shadow-xs'
+                        : 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900';
+                }
+            });
+
+            renderTimetableRows(day);
+            await loadTimetableFromBackend(day);
+        }
+
+        // Render Labs Grid
+        function renderLabs(labs = sampleLabs) {
+            const grid = document.getElementById('labsGrid');
+            if (!grid) return;
+            grid.innerHTML = labs.map(lab => `
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${lab.status === 'Available' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${lab.status}</span>
+                            <span class="text-xs text-slate-400"><i class="fa-solid fa-users mr-1"></i>${lab.capacity}</span>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-base mt-2">${lab.name}</h3>
+                        <p class="text-xs text-slate-500 mt-0.5"><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${lab.location}</p>
+                        <p class="text-xs text-slate-600 mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100"><strong class="text-slate-700">Equipments:</strong> ${lab.equipment}</p>
+                    </div>
+                    <button onclick="openLabBooking('${lab.name}')" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-xs transition">Request Slot Booking</button>
+                </div>
+            `).join('');
+        }
+
+        // Render Books Grid
+        function renderBooks() {
+            const grid = document.getElementById('booksGrid');
+            if (!grid) return;
+            grid.innerHTML = sampleBooks.map(book => `
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+                    <div>
+                        <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded">${book.tag}</span>
+                        <h3 class="font-bold text-slate-800 text-sm mt-1">${book.title}</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">By ${book.author}</p>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-100 text-xs">
+                        <span class="font-medium ${book.status.includes('Available') ? 'text-emerald-600' : 'text-amber-600'}">${book.status}</span>
+                        <button onclick="alert('Book reserved! You can pick it up at counter 2.')" class="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold rounded-lg text-xs">Reserve</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render Requests
+        function renderRequests() {
+            const list = document.getElementById('requestsList');
+            const countEl = document.getElementById('dashReqCount');
+            if (countEl) countEl.textContent = sampleRequests.filter(r => r.status !== 'Resolved').length;
+
+            if (!list) return;
+            list.innerHTML = sampleRequests.map(req => `
+                <div class="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 hover:bg-slate-50 transition">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-xs text-slate-800">${req.id}</span>
+                            <span class="text-xs text-slate-400">• ${req.date}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${req.status === 'Resolved' ? 'bg-emerald-100 text-emerald-800' : req.status === 'In Progress' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">${req.status}</span>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-700 mt-1">${req.category} (${req.location})</p>
+                        <p class="text-xs text-slate-500">${req.desc}</p>
+                    </div>
+                    <button onclick="alert('Tracking status update: Assigned to Maintenance Team.')" class="text-xs text-blue-600 hover:underline font-medium">Track Status</button>
+                </div>
+            `).join('');
+        }
+
+        // Modals Control
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function openLabBooking(labName) {
+            const lab = sampleLabs.find(item => item.name === labName);
+            selectedLabId = lab ? lab.id : null;
+            const title = document.getElementById('labModalTitle');
+            if (title) title.textContent = `Book Slot: ${labName}`;
+            openModal('labBookModal');
+        }
+
+        async function bookLab(labId) {
+            if (!labId) {
+                showToast('Please select a valid lab first.', 'error');
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/labs/book`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lab_id: Number(labId), requester: currentRole.toLowerCase() })
+                });
+                if (!response.ok) {
+                    let message = `Booking API returned ${response.status}`;
+                    try {
+                        const payload = await response.json();
+                        message = payload.detail || payload.message || message;
+                    } catch (_) {}
+                    throw new Error(message);
+                }
+                const data = await response.json();
+                const reqId = data.ticket_id || data.booking_id || data.id || `BOOK-${Date.now()}`;
+                sampleRequests.unshift({
+                    id: reqId,
+                    category: 'Lab booking',
+                    location: sampleLabs.find(l => String(l.id) === String(labId))?.name || 'Campus Lab',
+                    desc: 'Lab slot booking request submitted through Campus Copilot.',
+                    status: data.status || 'Submitted',
+                    date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+                });
+                renderRequests();
+                closeModal('labBookModal');
+                showToast(`Booking submitted successfully (${reqId}).`, 'success', 4500);
+            } catch (error) {
+                console.error('Lab booking error:', error);
+                closeModal('labBookModal');
+                showToast(`Booking failed: ${error.message || 'Unknown error'}`, 'error', 5000);
+            }
+        }
+
+        async function submitNewTicket(e) {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            const categoryEl = document.getElementById('reqCategory');
+            const locationEl = document.getElementById('reqLocation');
+            const descEl = document.getElementById('reqDesc');
+            if (!categoryEl || !locationEl || !descEl) return;
+            const cat = categoryEl.value.trim();
+            const loc = locationEl.value.trim();
+            const desc = descEl.value.trim();
+            if (!loc || !desc) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/tickets`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category: cat, location: loc, description: desc })
+                });
+                if (!response.ok) {
+                    let message = `Ticket API returned ${response.status}`;
+                    try {
+                        const payload = await response.json();
+                        message = payload.detail || payload.message || message;
+                    } catch (_) {}
+                    throw new Error(message);
+                }
+                const data = await response.json();
+                const newReq = {
+                    id: data.ticket_id || data.request_id || data.id || `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
+                    category: data.category || cat,
+                    location: data.location || loc,
+                    desc: data.description || desc,
+                    status: data.status || 'Submitted',
+                    date: data.date || new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+                };
+                sampleRequests.unshift(newReq);
+                renderRequests();
+                closeModal('quickReqModal');
+                if (e?.target?.reset) e.target.reset();
+                showToast(`Ticket ${newReq.id} submitted successfully.`, 'success', 4500);
+            } catch (error) {
+                console.warn('Ticket backend unavailable; saving locally.', error);
+                const newReq = {
+                    id: `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
+                    category: cat,
+                    location: loc,
+                    desc,
+                    status: 'Submitted',
+                    date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+                };
+                sampleRequests.unshift(newReq);
+                renderRequests();
+                closeModal('quickReqModal');
+                if (e?.target?.reset) e.target.reset();
+                showToast(`Ticket ${newReq.id} saved locally (backend unavailable).`, 'info', 5000);
+            }
+        }
+
+        function submitLabBooking(e) {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            bookLab(selectedLabId);
+        }
+
+        function filterBooks() {
+            const input = document.getElementById('librarySearch');
+            const grid = document.getElementById('booksGrid');
+            if (!input || !grid) return;
+            const query = input.value.trim().toLowerCase();
+            Array.from(grid.children).forEach(card => {
+                card.classList.toggle('hidden', !!query && !card.textContent.toLowerCase().includes(query));
+            });
+        }
+
+        function filterNotices() {
+            const input = document.getElementById('noticeSearch');
+            const container = document.getElementById('noticesContainer');
+            if (!input || !container) return;
+            const query = input.value.trim().toLowerCase();
+            Array.from(container.children).forEach(card => {
+                card.classList.toggle('hidden', !!query && !card.textContent.toLowerCase().includes(query));
+            });
+        }
+
+        function submitBookRequest(e) {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            closeModal('bookRequestModal');
+            showToast('Book request submitted to the Library Acquisition department.', 'success', 3500);
+        }
+
+        function rsvpEvent(btn) {
+            if (!btn) return;
+            btn.classList.remove('bg-blue-600', 'bg-purple-600', 'bg-emerald-600');
+            btn.classList.add('bg-slate-200', 'text-slate-700');
+            btn.textContent = 'Registered ✓';
+            btn.disabled = true;
+        }
+
+        function triggerSOS() {
+            alert('🚨 EMERGENCY SOS BROADCASTED!\n\nYour current location tag (Academic Block) and alert have been sent to Campus Security Desk and Student Affairs Hotline.');
+        }
+
+        // Initial Load setup
+        window.addEventListener('DOMContentLoaded', async () => {
+            checkBackendHealth();
+            renderBooks();
+            renderRequests();
+            switchRole('Student');
+            await Promise.all([
+                loadLabsFromBackend(),
+                loadTicketsFromBackend(),
+                loadBooksFromBackend(),
+                switchTimetableDay('Tue')
+            ]);
+        });
+    </script>
+    
+
+
+</body>
+</html>
